@@ -38,11 +38,15 @@ module.exports = {
       });
   },
   deleteThought(req, res) {
-    Thought.findOneAndDelete({_id: req.params.thoughtId})
+    Thought.findOneAndRemove({_id: req.params.thoughtId})
       .then((thought) =>
         !thought
           ? res.status(404).json({message: 'No Thought with that ID' })
-          : User.deleteMany({ _id: { $in: thought.user} })
+          : User.findOneAndUpdate(
+            { thoughts: req.params.thoughtId },
+            {$pull: { thoughts: req.params.thoughtId } },
+            { new: true },
+          )
       )
       .then(() => res.json({message: 'Thought deleted!'}))
       .catch((err) => res.status(500).json(err));
@@ -78,7 +82,7 @@ module.exports = {
   removeReaction(req, res) {
     Thought.findOneAndUpdate(
       { _id: req.params.thoughtId },
-      { $pull: { reactions: { reactionId: req.params.reactionId } } },
+      { $pull: { reactions: { _id: req.params.reactionId } } },
       { runValidators: true, new: true }
     )
       .then((thought) =>
